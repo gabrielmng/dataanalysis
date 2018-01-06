@@ -1,0 +1,425 @@
+---
+title: "Leia2017"
+author: "Gabriel Magalhães Nunes Guimarães"
+date: "dec 2017"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+#library(plotly)
+library(ggplot2)
+leia=read.csv("/home/gabriel/Downloads/leiaj.csv",header=TRUE)
+leiaf=subset(leia,leia$nausea.24h!="NA")
+leiaf$ponv=leiaf$nausea.24h
+ponv=subset(leiaf,leiaf$nausea.24h==TRUE)
+nponv=subset(leiaf,leiaf$nausea.24h==FALSE)
+comparenp=function(vector, group, variablename){
+r1=tapply(vector,group,mean,na.rm=TRUE)
+r2=tapply(vector,group,sd,na.rm=TRUE)
+r3=wilcox.test((vector)~group)
+print(paste("Mean",variablename,"in no PONV group: "))
+print(unname(r1[1]))
+print("Standard deviation in no PONV group")
+print(unname(r2[1]))
+print(paste("Mean",variablename,"in PONV group: "))
+print(unname(r1[2]))
+print("Standard deviation in PONV group")
+print(unname(r2[2]))
+print("hypothesis test p-value")
+print(unname(r3[3]))
+print("-------------------")
+boxplot(vector~group,xlab="PONV",ylab=variablename)
+print("-------------------")
+}
+
+```
+
+
+```{r}
+x=c("a: Still Smokes","b: 1 month ago","c: 1-6 \nmonths ago","d: more than\n 6 months ago","e: Never smoked")
+
+p1=sum(ponv$when.stopped.smoking=="a.smokes",na.rm=TRUE)/(sum(ponv$when.stopped.smoking=="a.smokes",na.rm=TRUE)+sum(nponv$when.stopped.smoking=="a.smokes",na.rm=TRUE))
+p2=sum(ponv$when.stopped.smoking=="b.1.month.ago",na.rm=TRUE)/(sum(ponv$when.stopped.smoking=="b.1.month.ago",na.rm=TRUE)+sum(nponv$when.stopped.smoking=="b.1.month.ago",na.rm=TRUE))
+p3=sum(ponv$when.stopped.smoking=="c.1-6.months.ago",na.rm=TRUE)/(sum(ponv$when.stopped.smoking=="c.1-6.months.ago",na.rm=TRUE)+sum(nponv$when.stopped.smoking=="c.1-6.months.ago",na.rm=TRUE))
+p4=sum(ponv$when.stopped.smoking=="d.>6months.ago",na.rm=TRUE)/(sum(ponv$when.stopped.smoking=="d.>6months.ago",na.rm=TRUE)+sum(nponv$when.stopped.smoking=="d.>6months.ago",na.rm=TRUE))
+p5=sum(ponv$when.stopped.smoking=="e.never.smoked",na.rm=TRUE)/(sum(ponv$when.stopped.smoking=="e.never.smoked",na.rm=TRUE)+sum(nponv$when.stopped.smoking=="e.never.smoked",na.rm=TRUE))
+
+y=c(p1,p2,p3,p4,p5)
+
+dados=data.frame(Stopped.Smoking=x,probability=y)
+ggplot(dados,aes(Stopped.Smoking,probability)) + geom_bar(stat="identity",aes(fill=Stopped.Smoking))+theme_bw()+scale_fill_grey(start = 0, end = .9)+guides(fill=FALSE)+labs(x = "Stopped smoking", y = "Probability of PONV")
+```
+
+# Demographic data
+
+```{r}
+#number of tests
+nt=0
+p_values=1
+tests=""
+
+# SEX
+table(leiaf$sex,leiaf$ponv)
+chisq.test(leiaf$sex,leiaf$ponv)
+nt=nt+1
+p_values[nt]=unname(chisq.test(leiaf$sex,leiaf$ponv)[3])
+tests[nt]="SEX"
+
+# APFEL
+table(leiaf$Apfel,leiaf$ponv)
+wilcox.test(leiaf$Apfel~leiaf$ponv)
+nt=nt+1
+p_values[nt]=unname(wilcox.test(leiaf$Apfel~leiaf$ponv)[3])
+tests[nt]="APFEL"
+
+# AGE
+comparenp(leiaf$age,leiaf$ponv,"Age in years")
+t=wilcox.test(leiaf$age ~leiaf$ponv)
+t
+nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="AGE"
+
+# PREVIOUS PONV
+table(leiaf$previous.ponv,leiaf$ponv)
+chisq.test(leiaf$previous.ponv,leiaf$ponv)
+nt=nt+1
+p_values[nt]=unname(chisq.test(leiaf$previous.ponv,leiaf$ponv)[3])
+tests[nt]="PREVIOUS PONV"
+
+# PO OPIOIDS
+table(leiaf$postoperative.opioids,leiaf$ponv)
+chisq.test(leiaf$postoperative.opioids,leiaf$ponv)
+nt=nt+1
+p_values[nt]=unname(chisq.test(leiaf$postoperative.opioids,leiaf$ponv)[3])
+tests[nt]="PO OPIOIDS"
+
+
+#NON-SMOKER
+table(leiaf$non.smoker,leiaf$ponv)
+chisq.test(leiaf$non.smoker,leiaf$ponv)
+nt=nt+1
+p_values[nt]=unname(chisq.test(leiaf$non.smoker,leiaf$ponv)[3])
+tests[nt]="NON SMOKER"
+
+# SURGERY
+table(leiaf$surgical.procedure,leiaf$ponv)
+t=chisq.test(leiaf$surgical.procedure,leiaf$ponv)
+t
+nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="SURGERY"
+
+# CHRONIC OPIOID USER
+table(leiaf$chronic.opioid.user,leiaf$ponv)
+t=chisq.test(leiaf$chronic.opioid.user,leiaf$ponv)
+t
+nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="CHRONIC OPIOID USER"
+
+
+# PREVIOUS CHEMOTHERAPY
+table(leiaf$previous.chemotherapy,leiaf$ponv)
+t=chisq.test(leiaf$previous.chemotherapy,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="PREVIOUS CHEMOTHERAPY"
+
+# HOW MANY MONTHS AGO RECEIVED CHEMOTHERAPY
+comparenp(leiaf$how.many.months.ago.chemotherapy,leiaf$ponv,"how many months ago received chemotherapy")
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="HOW MANY MONTHS AGO RECEIVED CHEMOTHERAPY"
+
+# CHEMOTHERAPY EMETOGENICITY
+table(leiaf$chemotherapy.emetogenicity,leiaf$ponv)
+t=wilcox.test(rank(leiaf$chemotherapy.emetogenicity)~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="CHEMOTHERAPY EMETOGENICITY"
+
+# CHEMOTHERAPY INDUCED NAUSEA
+table(leiaf$post.chemotherapy.nausea,leiaf$ponv)
+t=chisq.test(leiaf$post.chemotherapy.nausea,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="CHEMOTHERAPY INDUCED NAUSEA"
+
+# CHEMOTHERAPY INDUCED VOMITING
+table(leiaf$post.chemotherapy.vomiting,leiaf$ponv)
+t=chisq.test(leiaf$post.chemotherapy.vomiting,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="CHEMOTHERAPY INDUCED VOMITING"
+
+# WHEN STOPED SMOKING
+table(leiaf$when.stopped.smoking,leiaf$ponv)
+t=wilcox.test(rank(leiaf$when.stopped.smoking)~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="WHEN STOPED SMOKING"
+
+
+# CIGAR PACKETS x YEARS
+comparenp(leiaf$packets.years,leiaf$ponv,"Cigar Packets.Years")
+t=wilcox.test(leiaf$packets.years ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="CIGAR PACKETS x YEARS"
+
+# SURGERY CLASSIFICATION 2
+table(leiaf$surgery.classification.2,leiaf$ponv)
+t=chisq.test(leiaf$surgery.classification.2,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="SURGERY CLASSIFICATION 2"
+```
+
+## Anestesia
+
+```{r}
+table(leiaf$anesthesia.technique,leiaf$ponv)
+t=chisq.test(leiaf$anesthesia.technique,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="Anesthesia technique"
+
+table(leiaf$neuraxial.opioid,leiaf$ponv)
+t=chisq.test(leiaf$neuraxial.opioid,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="NEURAXIAL OPIOIDS"
+
+table(leiaf$intraoperative.opioid,leiaf$ponv)
+t=chisq.test(leiaf$intraoperative.opioid,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE OPIOD"
+
+table(leiaf$remifentanil,leiaf$ponv)
+t=chisq.test(leiaf$remifentanil,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="REMIFENTANIL"
+
+table(leiaf$continuous.sufentanil,leiaf$ponv)
+t=chisq.test(leiaf$continuous.sufentanil,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="CONTINUOUS SUFENTANIL"
+
+#table(leiaf,leiaf$ponv)
+
+comparenp(leiaf$fentanil.mcg,leiaf$ponv,"Fentanil in mcg")
+t=wilcox.test(leiaf$fentanil.mcg ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="FENTANIL DOSE"
+
+comparenp(leiaf$sufentanil.mcg,leiaf$ponv,"Sufentanil in mcg")
+t=wilcox.test(leiaf$sufentanil.mcg ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="SUFENTANIL DOSE"
+
+# PACU TRAMADOL
+table(leiaf$tramadol.pacu,leiaf$ponv)
+t=fisher.test(leiaf$tramadol.pacu, leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="TRAMADOL PACU"
+
+comparenp(leiaf$tramadol.dose.pacu,leiaf$ponv,"Tramadol (mg) in PACU")
+t=wilcox.test(leiaf$tramadol.dose.pacu ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="TRAMADOL PACU DOSE"
+
+# Intraoperative Ketamine
+
+table(leiaf$intraoperative.ketamine,leiaf$ponv)
+t=fisher.test(leiaf$intraoperative.ketamine, leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="KETAMINE"
+
+comparenp(leiaf$ketamine.dose,leiaf$ponv,"Ketamine dose")
+t=wilcox.test(leiaf$ketamine.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="KETAMINE DOSE"
+
+# Intraoperative morphine
+
+table(leiaf$intraoperative.morphine,leiaf$ponv)
+t=fisher.test(leiaf$intraoperative.morphine,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="INTRAOPERATIVE MORPHINE"
+
+comparenp(leiaf$intraoperative.morphine.dose,leiaf$ponv,"Intraoperative morphine dose")
+t=wilcox.test(leiaf$intraoperative.morphine.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE MORPHINE DOSE"
+```
+
+## Prophylactic antiemetics (INTRAOPERATIVE)
+
+```{r}
+
+comparenp(leiaf$antiemeticos.intraop.numero,leiaf$ponv,"Number of intraoperative antiemetic drugs")
+t=wilcox.test(leiaf$antiemeticos.intraop.numero ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="NUMBER OF INTRAOPERATIVE ANTIEMETIC DRUGS"
+
+# INTRAOPERATIVE ONDANSETRON
+
+table(leiaf$ondansetron.intraoperative,leiaf$ponv)
+t=fisher.test(leiaf$ondansetron.intraoperative,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="INTRAOPERATIVE ONDANSETRON"
+
+comparenp(leiaf$intraoperative.ondansetron.dose,leiaf$ponv,"Intraoperative ondansetron dose")
+t=wilcox.test(leiaf$intraoperative.ondansetron.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE ONDANSETRON DOSE"
+
+# INTRAOPERATIVE DEXAMETHASONE
+
+table(leiaf$intraoperative.dexamethasone,leiaf$ponv)
+t=fisher.test(leiaf$intraoperative.dexamethasone,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="INTRAOPERATIVE DEXAMETHASONE"
+
+comparenp(leiaf$dexamethasone.dose,leiaf$ponv,"Intraoperative dexamethasone dose")
+t=wilcox.test(leiaf$dexamethasone.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE DEXAMETHASONE DOSE"
+
+# INTRAOPERATIVE DIMENIDRATE
+
+table(leiaf$intraoperative.dimenidrate,leiaf$ponv)
+t=fisher.test(leiaf$intraoperative.dimenidrate,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="INTRAOPERATIVE DIMENIDRATE"
+
+comparenp(leiaf$intraoperative.dimenidrate.dose,leiaf$ponv,"Intraoperative dimenidrate dose")
+t=wilcox.test(leiaf$intraoperative.dimenidrate.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE DIMENIDRATE DOSE"
+
+# INTRAOPERATIVE METOCLOPRAMIDE
+
+table(leiaf$Intraoperative.metoclopramide,leiaf$ponv)
+t=fisher.test(leiaf$Intraoperative.metoclopramide,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="INTRAOPERATIVE METOCLOPRAMIDE"
+
+comparenp(leiaf$metoclopramide.dose,leiaf$ponv,"Intraoperative metoclopramide dose")
+t=wilcox.test(leiaf$metoclopramide.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE METOCLOPRAMIDE DOSE"
+
+# INTRAOPERATIVE DROPERIDOL
+
+table(leiaf$intraoperative.droperidol,leiaf$ponv)
+t=fisher.test(leiaf$intraoperative.droperidol,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="INTRAOPERATIVE DROPERIDOL"
+
+comparenp(leiaf$droperidol.dose,leiaf$ponv,"Intraoperative droperidol dose")
+t=wilcox.test(leiaf$droperidol.dose ~leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[3])
+tests[nt]="INTRAOPERATIVE DROPERIDOL DOSE"
+```
+
+## Prophylactic antiemetics (POSTOPERATIVE)
+
+```{r}
+
+# ONDANSETRON
+
+table(leiaf$regular.ondansetron,leiaf$ponv)
+t=fisher.test(leiaf$regular.ondansetron,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="ONDANSETRON"
+
+# DEXAMETHASONE
+
+table(leiaf$regular.dexamethasone,leiaf$ponv)
+t=fisher.test(leiaf$regular.dexamethasone,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="DEXAMETHASONE"
+
+# DIMENIDRATE
+
+table(leiaf$regular.dimenidrate,leiaf$ponv)
+t=fisher.test(leiaf$regular.dimenidrate,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="DIMENIDRATE"
+
+# DROPERIDOL
+
+table(leiaf$regular.droperidol,leiaf$ponv)
+t=fisher.test(leiaf$regular.droperidol,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="DROPERIDOL"
+
+# METOCLOPRAMIDE
+
+table(leiaf$regular.metoclopramide,leiaf$ponv)
+t=fisher.test(leiaf$regular.metoclopramide,leiaf$ponv)
+t;nt=nt+1
+p_values[nt]=unname(t[1])
+tests[nt]="METOCLOPRAMIDE"
+
+```
+
+# Multiple comparisons controlling procedures
+
+```{r}
+p_values=unlist(p_values)
+
+
+# NUMBER OF HYPOTHESIS TESTS
+print(nt)
+
+# BONFERRONI's alpha (CONSERVATIVE)
+new_alpha=0.05 / nt
+print(new_alpha)
+
+data.frame(tests,p=p.adjust(p_values,method="bonferroni"))
+
+# USING FALSE DISCOVERY RATE
+
+## Benjamini, Y., and Yekutieli, D. (2001). The control of the false discovery rate in 
+##multiple testing under dependency. Annals of Statistics 29, 1165–1188. 
+
+data.frame(tests,p=p.adjust(p_values,method="BH"))
+
+```
+
